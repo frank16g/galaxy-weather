@@ -1,75 +1,31 @@
-# Nuxt Minimal Starter
+# 🌤 Galaxy Weather
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+Aplicación web en **Nuxt 3** para consultar el clima actual de cualquier ciudad usando la API de [OpenWeatherMap](https://openweathermap.org/).  
+Guarda un historial de búsquedas en LocalStorage y muestra los datos con iconografía dinámica.
 
-## Setup
+## 🚀 Funcionalidades
+- Buscar ciudad y mostrar:
+  - Estado meteorológico con iconos
+  - Temperatura actual, máxima y mínima
+  - Presión, humedad, visibilidad y viento
+- Historial persistente de ciudades
+- Diseño responsive con **Tailwind CSS**
 
-Make sure to install dependencies:
+## 📦 Tecnologías
+Nuxt 3 · Vue 3 · TypeScript · Tailwind CSS · OpenWeatherMap API
 
+## ⚙️ Instalación
 ```bash
-# npm
+git clone https://github.com/frank16g/galaxy-weather.git
+cd galaxy-weather
 npm install
-
-# pnpm
-pnpm install
-
-# yarn
-yarn install
-
-# bun
-bun install
-```
-
-## Development Server
-
-Start the development server on `http://localhost:3000`:
-
-```bash
-# npm
+cp .env.example .env   # Añadir API Key de OpenWeatherMap
 npm run dev
 
-# pnpm
-pnpm dev
+## 📂 Variables de entorno
+Variable                           Descripción               
+---------------------------------  ------------------------- 
+`NUXT_PUBLIC_OPENWEATHER_API_KEY`  API Key de OpenWeatherMap 
 
-# yarn
-yarn dev
-
-# bun
-bun run dev
-```
-
-## Production
-
-Build the application for production:
-
-```bash
-# npm
-npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
-```
-
-Locally preview production build:
-
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+## 👨‍💻 Autor
+Rafael Guillén Carrera
