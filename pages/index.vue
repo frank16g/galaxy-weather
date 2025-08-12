@@ -1,50 +1,72 @@
 <template>
-  <div class="max-w-2xl mx-auto p-6 space-y-6">
-    <h1 class="text-3xl font-bold text-sky-400">🌤 Galaxy Weather</h1>
-    <p class="text-slate-300">Consulta el clima por ciudad</p>
+  <div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-sky-900">
+    <div class="max-w-3xl mx-auto px-4 py-10">
+      <header class="text-center text-white mb-8">
+        <h1 class="text-3xl font-bold">🌤 Galaxy Weather</h1>
+        <p class="opacity-80">Consulta el clima de tu ciudad</p>
+      </header>
 
-    <UiSearchBar @search="onSearch" />
+      <div class="bg-white/10 border border-white/10 rounded-2xl p-5 backdrop-blur-md shadow-xl">
+        <SearchBar :loading="loading" @search="onSearch" />
 
-    <div v-if="loading" class="text-slate-400">Cargando…</div>
-    <div v-else-if="error" class="text-red-400">{{ error }}</div>
+        <p v-if="error" class="text-red-300 mt-4">{{ error }}</p>
+        <p v-else-if="loading" class="text-white/80 mt-4">Cargando…</p>
 
-    <UCard v-else-if="weather">
-      <div class="flex items-start justify-between">
-        <div>
-          <h2 class="text-xl font-semibold">
-            {{ weather.name }}
-            <span v-if="country" class="text-slate-400 text-sm">({{ country }})</span>
-          </h2>
-          <p class="capitalize text-slate-400">{{ weather.weather?.[0]?.description }}</p>
-        </div>
-        <div class="text-4xl font-bold">{{ Math.round(weather.main.temp) }}°C</div>
+        <WeatherCard v-if="weather" class="mt-5" :weather="weather" />
       </div>
 
-      <div class="grid grid-cols-2 gap-3 mt-4 text-sm">
-        <div class="flex justify-between"><span>Máx / Mín</span><span>{{ Math.round(weather.main.temp_max) }}° / {{ Math.round(weather.main.temp_min) }}°</span></div>
-        <div class="flex justify-between"><span>Humedad</span><span>{{ weather.main.humidity }}%</span></div>
-        <div class="flex justify-between"><span>Presión</span><span>{{ weather.main.pressure }} hPa</span></div>
-        <div class="flex justify-between"><span>Viento</span><span>{{ windText }}</span></div>
-        <div class="flex justify-between"><span>Visibilidad</span><span>{{ visibilityText }}</span></div>
-        <div class="flex justify-between"><span>Actualización</span><span>{{ timeText }}</span></div>
-      </div>
-    </UCard>
+      <CityHistory
+        class="mt-6"
+        :items="historyItems"
+        @select="onSearch"
+        @remove="onRemoveFromHistory"
+      />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import SearchBar from '@/components/ui/SearchBar.vue'
+import WeatherCard from '@/components/ui/WeatherCard.vue'
+import CityHistory from '@/components/ui/CityHistory.vue'
 import { useWeather } from '@/composables/useWeather'
+import { useCityHistory } from '@/composables/useCityHistory'
 
-const { data, loading, error, fetchByCity } = useWeather()
-
+// clima actual
+const { fetchByCity, data, loading, error } = useWeather()
 const weather = data
-const country = computed(() => weather.value?.sys?.country ?? '')
-const windText = computed(() => weather.value?.wind ? `${(weather.value.wind.speed * 3.6).toFixed(0)} km/h` : 'N/A')
-const visibilityText = computed(() => typeof weather.value?.visibility === 'number' ? `${(weather.value.visibility / 1000).toFixed(1)} km` : 'N/A')
-const timeText = computed(() => weather.value?.dt ? new Date(weather.value.dt * 1000).toLocaleString() : '-')
+
+// historial
+const { cities, add, remove } = useCityHistory()
+
+type HistoryItem = {
+  city: string
+  country?: string
+  temp?: number
+}
+
+const historyItems = computed<HistoryItem[]>(() => {
+  const items: HistoryItem[] = cities.value.map(c => ({ city: c as string }))
+  // si el clima actual pertenece a una ciudad del historial, se agrega la info
+  if (weather.value && cities.value.includes(weather.value.name.toLowerCase())) {
+    const idx = items.findIndex(i => i.city === weather.value!.name.toLowerCase())
+    if (idx !== -1) {
+      items[idx] = {
+        city: weather.value.name.toLowerCase(),
+        country: weather.value.sys?.country,
+        temp: weather.value.main?.temp
+      }
+    }
+  }
+  return items
+})
 
 async function onSearch(city: string) {
-  await fetchByCity(city)
+  const res = await fetchByCity(city)
+  if (res) add(res.name) 
+}
+
+function onRemoveFromHistory(city: string) {
+  remove(city)
 }
 </script>
