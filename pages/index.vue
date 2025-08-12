@@ -14,10 +14,8 @@ const { cities, add, remove, fetchWeatherForCities, loadFromStorage } = useCityH
 const historyWeather = ref<any[]>([])
 const dailyExtremes = ref<{ min: number; max: number } | null>(null)
 
-// Carga/recarga del clima de ciudades del historial
 async function loadHistoryWeather () {
   if (process.client && cities.value.length === 0) {
-    // Recupera desde localStorage la primera vez que montamos
     loadFromStorage()
   }
   historyWeather.value = await fetchWeatherForCities()
@@ -44,14 +42,13 @@ onMounted(loadHistoryWeather)
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-sky-900">
+  <div class="text-center text-white px-4 py-6">
     <div class="max-w-3xl mx-auto px-4 py-10">
       <header class="text-center text-white mb-8">
         <h1 class="text-3xl font-bold">🌤 Galaxy Weather</h1>
         <p class="opacity-80">Consulta el clima de tu ciudad</p>
       </header>
 
-      <!-- Card principal -->
       <div class="bg-white/10 border border-white/10 rounded-2xl p-5 backdrop-blur-md shadow-xl">
         <SearchBar :loading="loading" @search="onSearch" />
 
