@@ -1,3 +1,48 @@
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import SearchBar from '@/components/ui/SearchBar.vue'
+import WeatherCard from '@/components/ui/WeatherCard.vue'
+import CityHistory from '@/components/ui/CityHistory.vue'
+import { useWeather } from '@/composables/useWeather'
+import { useCityHistory } from '@/composables/useCityHistory'
+
+definePageMeta({ layout: 'default' })
+
+const { fetchByCity, fetchDailyExtremesByCity, data: weather, loading, error } = useWeather()
+const { cities, add, remove, fetchWeatherForCities, loadFromStorage } = useCityHistory()
+
+const historyWeather = ref<any[]>([])
+const dailyExtremes = ref<{ min: number; max: number } | null>(null)
+
+// Carga/recarga del clima de ciudades del historial
+async function loadHistoryWeather () {
+  if (process.client && cities.value.length === 0) {
+    // Recupera desde localStorage la primera vez que montamos
+    loadFromStorage()
+  }
+  historyWeather.value = await fetchWeatherForCities()
+}
+
+// Buscar una ciudad nueva
+const onSearch = async (city: string) => {
+  const result = await fetchByCity(city)
+  if (result) {
+    add(result.name)
+    dailyExtremes.value = await fetchDailyExtremesByCity(result.name)
+    await loadHistoryWeather()
+  }
+}
+
+// Eliminar ciudad del historial
+const removeCity = async (city: string) => {
+  remove(city)
+  await loadHistoryWeather()
+}
+
+// Cargar historial al abrir
+onMounted(loadHistoryWeather)
+</script>
+
 <template>
   <div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-sky-900">
     <div class="max-w-3xl mx-auto px-4 py-10">
@@ -6,67 +51,43 @@
         <p class="opacity-80">Consulta el clima de tu ciudad</p>
       </header>
 
+      <!-- Card principal -->
       <div class="bg-white/10 border border-white/10 rounded-2xl p-5 backdrop-blur-md shadow-xl">
         <SearchBar :loading="loading" @search="onSearch" />
 
         <p v-if="error" class="text-red-300 mt-4">{{ error }}</p>
         <p v-else-if="loading" class="text-white/80 mt-4">Cargando…</p>
 
-        <WeatherCard v-if="weather" class="mt-5" :weather="weather" />
+        <div class="max-w-3xl mx-auto">
+          <WeatherCard
+            v-if="weather"
+            class="mt-5"
+            :weather="weather"
+            :daily-extremes="dailyExtremes"
+          />
+        </div>
       </div>
 
-      <CityHistory
-        class="mt-6"
-        :items="historyItems"
-        @select="onSearch"
-        @remove="onRemoveFromHistory"
-      />
+      <!-- Historial -->
+      <ClientOnly>
+        <section class="mt-6 max-w-3xl mx-auto text-left text-white">
+          <h2 class="text-xl font-semibold mb-3">Historial</h2>
+
+          <div v-if="historyWeather.length === 0" class="text-white/70">
+            No hay búsquedas recientes.
+          </div>
+
+          <div class="space-y-2">
+            <CityHistory
+              v-for="w in historyWeather"
+              :key="w.name + '-' + (w.dt || '')"
+              :weather="w"
+              @select="onSearch"
+              @remove="removeCity"
+            />
+          </div>
+        </section>
+      </ClientOnly>
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import SearchBar from '@/components/ui/SearchBar.vue'
-import WeatherCard from '@/components/ui/WeatherCard.vue'
-import CityHistory from '@/components/ui/CityHistory.vue'
-import { useWeather } from '@/composables/useWeather'
-import { useCityHistory } from '@/composables/useCityHistory'
-
-// clima actual
-const { fetchByCity, data, loading, error } = useWeather()
-const weather = data
-
-// historial
-const { cities, add, remove } = useCityHistory()
-
-type HistoryItem = {
-  city: string
-  country?: string
-  temp?: number
-}
-
-const historyItems = computed<HistoryItem[]>(() => {
-  const items: HistoryItem[] = cities.value.map(c => ({ city: c as string }))
-  // si el clima actual pertenece a una ciudad del historial, se agrega la info
-  if (weather.value && cities.value.includes(weather.value.name.toLowerCase())) {
-    const idx = items.findIndex(i => i.city === weather.value!.name.toLowerCase())
-    if (idx !== -1) {
-      items[idx] = {
-        city: weather.value.name.toLowerCase(),
-        country: weather.value.sys?.country,
-        temp: weather.value.main?.temp
-      }
-    }
-  }
-  return items
-})
-
-async function onSearch(city: string) {
-  const res = await fetchByCity(city)
-  if (res) add(res.name) 
-}
-
-function onRemoveFromHistory(city: string) {
-  remove(city)
-}
-</script>
