@@ -1,8 +1,8 @@
 import tailwindcss from "@tailwindcss/vite";
 export default defineNuxtConfig({
   modules: ['@nuxt/ui'],
-  css: ['~/assets/css/main.css'],
-  // Clave pública 
+  srcDir: '.',
+  css: ['../assets/css/main.css'],
   runtimeConfig: {
     public: {
       openWeatherKey: process.env.NUXT_PUBLIC_OPENWEATHER_KEY || ''
