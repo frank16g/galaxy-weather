@@ -7,13 +7,12 @@ export function useWeather() {
   const loading = ref(false)
   const error = ref<string | null>(null)
 
-  // Geocodificación se mantiene solo para extremos diarios si la usas en otro sitio
+  // Geocodificación se mantiene para extremos diarios 
   async function geocode(city: string, key: string) {
     const url = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(city)}&limit=1&appid=${key}`
     return await $fetch<{ name: string; lat: number; lon: number; country?: string }[]>(url)
   }
 
-  // ✅ Para obtener el clima usamos weather?q=... en lugar de geocodificar
   async function fetchByCity(city: string, setData = true): Promise<WeatherResponse | null> {
     loading.value = true
     error.value = null
@@ -25,7 +24,7 @@ export function useWeather() {
       const term = city.trim()
       if (!term) { error.value = 'Introduce una ciudad'; return null }
 
-      // Pedir el tiempo directamente por nombre de ciudad (lang=es para descripciones en español)
+      // Pedir el tiempo directamente por nombre de ciudad 
       const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(term)}&units=metric&lang=es&appid=${key}`
       const res = await $fetch<WeatherResponse>(url)
       if (setData) data.value = res
@@ -38,7 +37,6 @@ export function useWeather() {
     }
   }
 
-  // 🔥 La función de extremos diarios se mantiene, si la usas, pero mejorando la precisión.
   async function fetchDailyExtremesByCity(city: string) {
     const config = useRuntimeConfig()
     const key = config.public.openWeatherKey ?? ''
